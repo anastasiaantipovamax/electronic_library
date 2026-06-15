@@ -191,6 +191,13 @@ def remove_cover_file_if_unused(filename):
             os.remove(filepath)
 
 
+
+
+def normalize_search_query(value):
+    """Нормализация поиска: без учёта регистра и без различия е/ё."""
+    return value.casefold().replace('ё', 'е')
+
+
 # ─── ГЛАВНАЯ СТРАНИЦА / ПОИСК / ПАГИНАЦИЯ ─────────────────────────────────────
 
 @books_bp.route('/')
@@ -203,17 +210,20 @@ def index():
     where_sql = ''
     where_params = []
     if search_query:
-        like = f'%{search_query}%'
+        # Поиск должен работать по части слова и без учёта заглавных/строчных букв,
+        # в том числе для русских букв. Обычный SQLite LIKE корректно игнорирует
+        # регистр только для латиницы, поэтому используем свою функцию SEARCH_NORM.
+        like = f'%{normalize_search_query(search_query)}%'
         where_sql = '''
-            WHERE b.title LIKE %s
-               OR b.author LIKE %s
-               OR b.publisher LIKE %s
-               OR b.description LIKE %s
+            WHERE SEARCH_NORM(b.title) LIKE %s
+               OR SEARCH_NORM(b.author) LIKE %s
+               OR SEARCH_NORM(b.publisher) LIKE %s
+               OR SEARCH_NORM(b.description) LIKE %s
                OR EXISTS (
                     SELECT 1
                     FROM book_genres bg_search
                     JOIN genres g_search ON g_search.id = bg_search.genre_id
-                    WHERE bg_search.book_id = b.id AND g_search.name LIKE %s
+                    WHERE bg_search.book_id = b.id AND SEARCH_NORM(g_search.name) LIKE %s
                )
         '''
         where_params = [like, like, like, like, like]

@@ -79,8 +79,21 @@ class SQLiteExtension:
             conn = sqlite3.connect(db_path)
             conn.row_factory = sqlite3.Row
             conn.execute('PRAGMA foreign_keys = ON')
+
+            # SQLite по умолчанию плохо сравнивает русские буквы без учёта регистра.
+            # Поэтому добавляем свою SQL-функцию для поиска: регистр не важен,
+            # а буквы «ё» и «е» считаются одинаковыми.
+            conn.create_function('SEARCH_NORM', 1, self._search_norm)
+
             g.sqlite_db = conn
         return g.sqlite_db
+
+
+    @staticmethod
+    def _search_norm(value):
+        if value is None:
+            return ''
+        return str(value).casefold().replace('ё', 'е')
 
     @staticmethod
     def _close_connection(exception=None):
