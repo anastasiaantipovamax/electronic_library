@@ -226,7 +226,7 @@ def index():
     cursor.execute(f'''
         SELECT b.id, b.title, b.year, b.author,
                c.filename AS cover_filename,
-               GROUP_CONCAT(DISTINCT g.name ORDER BY g.name SEPARATOR ', ') AS genres,
+               GROUP_CONCAT(DISTINCT g.name) AS genres,
                AVG(CASE WHEN r.status_id = 2 THEN r.rating END) AS avg_rating,
                COUNT(DISTINCT CASE WHEN r.status_id = 2 THEN r.id END) AS review_count
         FROM books b

@@ -1,14 +1,14 @@
 import os
 
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-prod')
 
-    # MySQL
-    MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
-    MYSQL_USER = os.environ.get('MYSQL_USER', 'library_user')
-    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', 'library_pass')
-    MYSQL_DB = os.environ.get('MYSQL_DB', 'library_db')
-    MYSQL_CURSORCLASS = 'DictCursor'
+    # SQLite. Работает на бесплатном PythonAnywhere без отдельного MySQL-тарифа.
+    SQLITE_DB_PATH = os.environ.get(
+        'SQLITE_DB_PATH',
+        os.path.join(os.path.dirname(__file__), 'instance', 'library.sqlite3')
+    )
 
     # Загрузка файлов
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
