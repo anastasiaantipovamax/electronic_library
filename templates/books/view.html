@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}{{ book.title }} — Электронная библиотека{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3 mb-4">
+        {% if book.cover_filename %}
+        <img src="{{ url_for('static', filename='uploads/' + book.cover_filename) }}"
+             class="img-fluid cover-img-lg w-100" alt="Обложка книги {{ book.title }}">
+        {% else %}
+        <div class="bg-secondary text-white d-flex align-items-center justify-content-center rounded"
+             style="height:250px;">
+            <i class="bi bi-book fs-1"></i>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-9">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <h2>{{ book.title }}</h2>
+            <div>
+                {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_moderator) %}
+                <a href="{{ url_for('books.edit', book_id=book.id) }}" class="btn btn-outline-warning btn-sm me-1">
+                    <i class="bi bi-pencil"></i> Редактировать
+                </a>
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.is_admin %}
+                <button onclick='confirmDelete({{ book.id }}, {{ book.title|tojson }})'
+                        class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-trash"></i> Удалить
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <table class="table table-borderless mb-3">
+            <tr><th width="160">Название</th><td>{{ book.title }}</td></tr>
+            <tr><th>Автор</th><td>{{ book.author }}</td></tr>
+            <tr><th>Год</th><td>{{ book.year }}</td></tr>
+            <tr><th>Издательство</th><td>{{ book.publisher }}</td></tr>
+            <tr><th>Объём</th><td>{{ book.pages }} стр.</td></tr>
+            <tr><th>Жанр(ы)</th>
+                <td>
+                    {% for g in book.genres %}
+                    <span class="badge bg-secondary me-1">{{ g }}</span>
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+
+        <h5>Краткое описание</h5>
+        <div class="text-muted border rounded bg-white p-3">
+            {{ book.description | markdown | safe }}
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<h4 class="mb-3">Рецензии <span class="badge bg-secondary">{{ approved_review_count }}</span></h4>
+
+{% if current_user.is_authenticated and current_user.can_write_review %}
+    {% if user_review %}
+        <div class="card border-info mb-4">
+            <div class="card-header bg-info-subtle fw-semibold">
+                <i class="bi bi-person-check me-1"></i>Ваша рецензия
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                    <div>
+                        <span class="stars">{% for i in range(user_review.rating) %}★{% endfor %}{% for i in range(5 - user_review.rating) %}☆{% endfor %}</span>
+                        <span class="badge bg-warning text-dark ms-1">{{ user_review.rating }}/5</span>
+                    </div>
+                    <div>
+                        {% if user_review.status_id == 1 %}
+                        <span class="badge bg-warning text-dark">{{ user_review.status_name }}</span>
+                        {% elif user_review.status_id == 2 %}
+                        <span class="badge bg-success">{{ user_review.status_name }}</span>
+                        {% else %}
+                        <span class="badge bg-danger">{{ user_review.status_name }}</span>
+                        {% endif %}
+                        <small class="text-muted ms-2">{{ user_review.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                    </div>
+                </div>
+                <div>{{ user_review.text | markdown | safe }}</div>
+            </div>
+        </div>
+    {% else %}
+        <a href="{{ url_for('reviews.add', book_id=book.id) }}" class="btn btn-primary mb-4">
+            <i class="bi bi-chat-left-text me-1"></i>Написать рецензию
+        </a>
+    {% endif %}
+{% endif %}
+
+{% for review in reviews %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+            <div>
+                <strong>{{ review.last_name }} {{ review.first_name }}</strong>
+                {% if review.middle_name %} {{ review.middle_name }}{% endif %}
+            </div>
+            <div>
+                <span class="stars">{% for i in range(review.rating) %}★{% endfor %}{% for i in range(5 - review.rating) %}☆{% endfor %}</span>
+                <span class="badge bg-warning text-dark ms-1">{{ review.rating }}/5</span>
+                <small class="text-muted ms-2">{{ review.created_at.strftime('%d.%m.%Y') }}</small>
+            </div>
+        </div>
+        <hr class="my-2">
+        <div>{{ review.text | markdown | safe }}</div>
+    </div>
+</div>
+{% else %}
+    {% if not user_review or approved_review_count == 0 %}
+    <p class="text-muted">Одобренных рецензий пока нет.</p>
+    {% endif %}
+{% endfor %}
+{% endblock %}

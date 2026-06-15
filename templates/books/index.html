@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Книги — Электронная библиотека{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h2 class="mb-0"><i class="bi bi-collection me-2"></i>Каталог книг</h2>
+    {% if current_user.is_authenticated and current_user.is_admin %}
+    <a href="{{ url_for('books.add') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle me-1"></i>Добавить книгу
+    </a>
+    {% endif %}
+</div>
+
+<form method="GET" action="{{ url_for('books.index') }}" class="card card-body shadow-sm mb-4">
+    <label class="form-label fw-semibold" for="q">Поиск книг</label>
+    <div class="input-group">
+        <input type="text" id="q" name="q" class="form-control"
+               value="{{ q }}"
+               placeholder="Введите название, автора, издательство, описание или жанр">
+        <button class="btn btn-primary" type="submit">
+            <i class="bi bi-search me-1"></i>Найти
+        </button>
+        {% if q %}
+        <a href="{{ url_for('books.index') }}" class="btn btn-outline-secondary">Сбросить</a>
+        {% endif %}
+    </div>
+    {% if q %}
+    <small class="text-muted mt-2">По запросу «{{ q }}» найдено книг: {{ total }}</small>
+    {% endif %}
+</form>
+
+<div class="table-responsive">
+<table class="table table-hover align-middle bg-white shadow-sm rounded">
+    <thead class="table-dark">
+        <tr>
+            <th>Обложка</th>
+            <th>Название / Автор</th>
+            <th>Жанр(ы)</th>
+            <th>Год</th>
+            <th class="text-center">Оценка</th>
+            <th class="text-center">Рецензий</th>
+            <th class="text-center">Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for book in books %}
+    <tr>
+        <td>
+            {% if book.cover_filename %}
+            <img src="{{ url_for('static', filename='uploads/' + book.cover_filename) }}"
+                 class="cover-img" alt="Обложка книги {{ book.title }}">
+            {% else %}
+            <div class="cover-img bg-secondary d-flex align-items-center justify-content-center text-white">
+                <i class="bi bi-book"></i>
+            </div>
+            {% endif %}
+        </td>
+        <td>
+            <div class="fw-semibold">{{ book.title }}</div>
+            <small class="text-muted">{{ book.author }}</small>
+        </td>
+        <td><small>{{ book.genres or '—' }}</small></td>
+        <td>{{ book.year }}</td>
+        <td class="text-center">
+            {% if book.avg_rating is not none %}
+            <span class="stars">★</span>
+            <strong>{{ '%.1f'|format(book.avg_rating) }}</strong>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+        </td>
+        <td class="text-center">
+            <span class="badge bg-secondary">{{ book.review_count }}</span>
+        </td>
+        <td class="text-center">
+            <a href="{{ url_for('books.view', book_id=book.id) }}"
+               class="btn btn-sm btn-outline-primary me-1" title="Просмотр">
+                <i class="bi bi-eye"></i>
+            </a>
+            {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_moderator) %}
+            <a href="{{ url_for('books.edit', book_id=book.id) }}"
+               class="btn btn-sm btn-outline-warning me-1" title="Редактировать">
+                <i class="bi bi-pencil"></i>
+            </a>
+            {% endif %}
+            {% if current_user.is_authenticated and current_user.is_admin %}
+            <button onclick='confirmDelete({{ book.id }}, {{ book.title|tojson }})'
+                    class="btn btn-sm btn-outline-danger" title="Удалить">
+                <i class="bi bi-trash"></i>
+            </button>
+            {% endif %}
+        </td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="7" class="text-center text-muted py-4">
+            {% if q %}По вашему запросу книги не найдены{% else %}Книги не найдены{% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% if total_pages > 1 %}
+<nav aria-label="Пагинация каталога книг">
+    <ul class="pagination justify-content-center">
+        {% for p in range(1, total_pages + 1) %}
+        <li class="page-item {% if p == page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('books.index', page=p, q=q) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

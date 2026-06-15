@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}{% if is_edit %}Редактирование{% else %}Добавление{% endif %} книги{% endblock %}
+
+{% macro book_form_fields(book, genres, is_edit) %}
+<div class="mb-3">
+    <label class="form-label fw-semibold">Название <span class="text-danger">*</span></label>
+    <input type="text" name="title" class="form-control"
+           value="{{ book.title if book else '' }}" required>
+</div>
+
+<div class="mb-3">
+    <label class="form-label fw-semibold">Автор <span class="text-danger">*</span></label>
+    <input type="text" name="author" class="form-control"
+           value="{{ book.author if book else '' }}" required>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <label class="form-label fw-semibold">Год <span class="text-danger">*</span></label>
+        <input type="number" name="year" class="form-control" min="1000" max="2099"
+               value="{{ book.year if book else '' }}" required>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label class="form-label fw-semibold">Издательство <span class="text-danger">*</span></label>
+        <input type="text" name="publisher" class="form-control"
+               value="{{ book.publisher if book else '' }}" required>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label class="form-label fw-semibold">Объём (стр.) <span class="text-danger">*</span></label>
+        <input type="number" name="pages" class="form-control" min="1"
+               value="{{ book.pages if book else '' }}" required>
+    </div>
+</div>
+
+<div class="mb-3">
+    <label class="form-label fw-semibold">Жанр(ы) <span class="text-danger">*</span></label>
+    <select name="genres" class="form-select" multiple size="6" required>
+        {% for genre in genres %}
+        <option value="{{ genre.id }}"
+            {% if book and genre.id in book.genre_ids %}selected{% endif %}>
+            {{ genre.name }}
+        </option>
+        {% endfor %}
+    </select>
+    <small class="text-muted">Удерживайте Ctrl (или Cmd на Mac), чтобы выбрать несколько жанров</small>
+</div>
+
+<div class="mb-3">
+    <label class="form-label fw-semibold">Краткое описание <span class="text-danger">*</span></label>
+    <textarea name="description" id="description-editor" class="form-control" rows="6">{{ book.description if book else '' }}</textarea>
+    <small class="text-muted">Можно использовать Markdown-разметку.</small>
+</div>
+
+{% if not is_edit %}
+<div class="mb-3">
+    <label class="form-label fw-semibold">Обложка <span class="text-danger">*</span></label>
+    <input type="file" name="cover" class="form-control" accept="image/*" required>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-8">
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">
+                {% if is_edit %}
+                <i class="bi bi-pencil-square me-2"></i>Редактирование книги
+                {% else %}
+                <i class="bi bi-plus-circle me-2"></i>Добавление книги
+                {% endif %}
+            </h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data" id="book-form">
+                {{ book_form_fields(book, genres, is_edit) }}
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-floppy me-1"></i>Сохранить
+                    </button>
+                    <a href="{{ url_for('books.index') }}" class="btn btn-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const descriptionEditor = document.getElementById('description-editor');
+let descriptionMDE = null;
+
+if (descriptionEditor && window.EasyMDE) {
+    descriptionMDE = new EasyMDE({
+        element: descriptionEditor,
+        spellChecker: false,
+        toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'preview'],
+        minHeight: '200px'
+    });
+}
+
+const bookForm = document.getElementById('book-form');
+if (bookForm) {
+    bookForm.addEventListener('submit', function () {
+        if (descriptionMDE) {
+            descriptionMDE.codemirror.save();
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Рассмотрение рецензии{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-8">
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="bi bi-shield-check me-2"></i>Рассмотрение рецензии</h4>
+            <a href="{{ url_for('reviews.moderation') }}" class="btn btn-outline-light btn-sm">← Назад</a>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Книга</dt>
+                <dd class="col-sm-9">
+                    <a href="{{ url_for('books.view', book_id=review.book_id) }}">{{ review.book_title }}</a>
+                </dd>
+
+                <dt class="col-sm-3">Автор рецензии</dt>
+                <dd class="col-sm-9">
+                    {{ review.last_name }} {{ review.first_name }}{% if review.middle_name %} {{ review.middle_name }}{% endif %}
+                </dd>
+
+                <dt class="col-sm-3">Оценка</dt>
+                <dd class="col-sm-9">
+                    <span class="stars">{% for i in range(review.rating) %}★{% endfor %}{% for i in range(5 - review.rating) %}☆{% endfor %}</span>
+                    {{ review.rating }}/5
+                </dd>
+
+                <dt class="col-sm-3">Статус</dt>
+                <dd class="col-sm-9">{{ review.status_name }}</dd>
+
+                <dt class="col-sm-3">Дата</dt>
+                <dd class="col-sm-9">{{ review.created_at.strftime('%d.%m.%Y %H:%M') }}</dd>
+
+                <dt class="col-sm-3">Текст рецензии</dt>
+                <dd class="col-sm-9">
+                    <div class="border rounded p-3 bg-light">
+                        {{ review.text | markdown | safe }}
+                    </div>
+                </dd>
+            </dl>
+
+            <form method="POST" class="d-flex gap-3 mt-3">
+                <button type="submit" name="action" value="reject" class="btn btn-danger">
+                    <i class="bi bi-x-circle me-1"></i>Отклонить
+                </button>
+                <button type="submit" name="action" value="approve" class="btn btn-success">
+                    <i class="bi bi-check-circle me-1"></i>Одобрить
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
